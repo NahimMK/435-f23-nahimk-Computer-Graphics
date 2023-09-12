@@ -1,1 +1,1 @@
-gl_login, full_name, annonymous_string_for_grades_spreadsheet, 435_or_634, major
+ti60490, Nahim Kamruzzaman, MomoThePhish, 435, Computer Science
