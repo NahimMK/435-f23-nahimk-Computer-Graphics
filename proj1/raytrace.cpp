@@ -32,6 +32,7 @@ struct Triangle {
 };
 
 bool parseNFF(const string& filename, Camera& camera, Background& bg, vector<Triangle>& triangles){
+    
     ifstream file(filename);
     if(!file.is_open()) {
         cerr << "Failed to open NFF file" << endl;
@@ -40,24 +41,44 @@ bool parseNFF(const string& filename, Camera& camera, Background& bg, vector<Tri
 
     string line;
     while(getline(file, line)) {
-        istringstream iss(line);
-        char cmd;
-        if(line[0] == 'v') {
-            iss >> cmd >> camera.fromX >> camera.fromY >> camera.fromZ;
-            iss >> cmd >> camera.atX >> camera.atY >> camera.atZ;
-            iss >> cmd >> camera.upX >> camera.upY >> camera.upZ;
-            iss >> cmd >> camera.angle;
-            iss >> cmd >> camera.hither;
+        if (line[0] == 'v') {
+            string cmd;
+            getline(file, line); // Read the 'from' line
+            cout << line << endl;
+            istringstream fromStream(line);
+            fromStream >> cmd >> camera.fromX >> camera.fromY >> camera.fromZ;
+
+            getline(file, line); // Read the 'at' line
+            istringstream atStream(line);
+            atStream >> cmd >> camera.atX >> camera.atY >> camera.atZ;
+
+            getline(file, line); // Read the 'up' line
+            istringstream upStream(line);
+            upStream >> cmd >> camera.upX >> camera.upY >> camera.upZ;
+
+            getline(file, line); // Read the 'angle' line
+            istringstream angleStream(line);
+            angleStream >> cmd >> camera.angle;
+
+            getline(file, line); // Read the 'hither' line
+            istringstream hitherStream(line);
+            hitherStream >> cmd >> camera.hither;
         }else if(line[0] == 'b') {
-            iss >> cmd >> bg.r >> bg.g >> bg.b;
+            istringstream bgStream(line);
+            char cmd;
+            bgStream >> cmd >> bg.r >> bg.g >> bg.b;
         }else if(line[0] == 'f') {
+            istringstream matStream(line);
+            char cmd;
             Material material;
-            iss >> cmd >> material.r >> material.g >> material.b;
+            matStream >> cmd >> material.r >> material.g >> material.b;
         }else if(line[0] == 'p') {
+            istringstream triStream(line);
+            char cmd;
             Triangle triangle;
-            iss >> cmd;
+            triStream >> cmd;
             float vertex;
-            while (iss >> vertex) {
+            while (triStream >> vertex) {
                 triangle.vertices.push_back(vertex);
             }
             triangles.push_back(triangle);
@@ -72,8 +93,16 @@ int main() {
     Background bg;
     vector<Triangle> triangles;
 
-    if(parseNFF("input.nff", camera, bg, triangles)){
+    if(parseNFF("tetra-3.nff", camera, bg, triangles)){
+        cout << "Camera:" << endl;
+        cout << "From: " << camera.fromX << " " << camera.fromY << " " << camera.fromZ << endl;
+        cout << "At: " << camera.atX << " " << camera.atY << " " << camera.atZ << endl;
+        cout << "Up: " << camera.upX << " " << camera.upY << " " << camera.upZ << endl;
+        cout << "Angle: " << camera.angle << endl;
+        cout << "Hither: " << camera.hither << endl;
 
+        cout << "Background:" << endl;
+        cout << "R: " << bg.r << " G: " << bg.g << " B: " << bg.b << endl;
     }
     return 0;
 }
