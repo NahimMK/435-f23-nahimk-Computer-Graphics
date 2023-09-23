@@ -4,11 +4,14 @@
 #include <string>
 #include <vector>
 #include <stdio.h>
-
 using namespace std;
+/*
+struct Ray {
+    Eigen::Vector3f origin;
+    Eigen::Vector3f direction;
+};
+*/
 
-const int WIDTH = 512; //Change later to parse from nff resolution
-const int HEIGHT = 512;
 
 struct Camera {
     float fromX, fromY, fromZ;
@@ -16,6 +19,7 @@ struct Camera {
     float upX, upY, upZ;
     float angle;
     float hither;
+    int resX, resY;
 };
 
 struct Background {
@@ -43,31 +47,35 @@ bool parseNFF(const string& filename, Camera& camera, Background& bg, vector<Tri
     while(getline(file, line)) {
         if (line[0] == 'v') {
             string cmd;
-            getline(file, line); // Read the 'from' line
+            getline(file, line); // Read the from line
             cout << line << endl;
             istringstream fromStream(line);
             fromStream >> cmd >> camera.fromX >> camera.fromY >> camera.fromZ;
 
-            getline(file, line); // Read the 'at' line
+            getline(file, line); // Read the at line
             istringstream atStream(line);
             atStream >> cmd >> camera.atX >> camera.atY >> camera.atZ;
 
-            getline(file, line); // Read the 'up' line
+            getline(file, line); // Read the up line
             istringstream upStream(line);
             upStream >> cmd >> camera.upX >> camera.upY >> camera.upZ;
 
-            getline(file, line); // Read the 'angle' line
+            getline(file, line); // Read the angle line
             istringstream angleStream(line);
             angleStream >> cmd >> camera.angle;
 
-            getline(file, line); // Read the 'hither' line
+            getline(file, line); // Read the hither line
             istringstream hitherStream(line);
             hitherStream >> cmd >> camera.hither;
+
+            getline(file, line); // Read the resolution line
+            istringstream resStream(line);
+            resStream >> cmd >> camera.resX >> camera.resY;
         }else if(line[0] == 'b') {
             istringstream bgStream(line);
             char cmd;
             bgStream >> cmd >> bg.r >> bg.g >> bg.b;
-        }else if(line[0] == 'f') {
+        }else if(line[0] == 'f' && line[1] == ' ') {
             istringstream matStream(line);
             char cmd;
             Material material;
@@ -88,6 +96,7 @@ bool parseNFF(const string& filename, Camera& camera, Background& bg, vector<Tri
     return true;
 }
 
+
 int main() {
     Camera camera;
     Background bg;
@@ -103,6 +112,23 @@ int main() {
 
         cout << "Background:" << endl;
         cout << "R: " << bg.r << " G: " << bg.g << " B: " << bg.b << endl;
+
+        cout << "Resolution:" << endl;
+        cout << "Height: " << camera.resY << " Width: " << camera.resX << endl;
     }
+
+    unsigned char pixels[camera.resY][camera.resX][3];
+    for (int y = 0; y < camera.resY; y++) {
+        for (int x = 0; x < camera.resX; x++) {
+            pixels[y][x][0] = static_cast<unsigned char>(bg.r * 255);
+            pixels[y][x][1] = static_cast<unsigned char>(bg.g * 255);
+            pixels[y][x][2] = static_cast<unsigned char>(bg.b * 255);
+        }
+    }
+
+    FILE *f = fopen("output.ppm", "wb");
+    fprintf(f, "P6\n%d %d\n%d\n", camera.resX, camera.resY, 255);
+    fwrite(pixels, 1, camera.resY * camera.resX * 3, f);
+    fclose(f);
     return 0;
 }
