@@ -25,7 +25,6 @@ public:
   Eigen::Vector3d p, n, v;
   Fill f;
   int raydepth;
-  double kd, ks, shine, transmittance, ior;
 };
 
 class Light {
@@ -90,7 +89,7 @@ public:
   ~Tracer();
   void createImage();  
   Eigen::Vector3d castRay(const Ray &ray, double t0, double t1) const;
-  Eigen::Vector3d shade(const HitRecord &hr) const;
+  Eigen::Vector3d shade(const HitRecord &hr, const Ray &incidentRay) const;
   void writeImage(const std::string &fname);
 
   bool color;

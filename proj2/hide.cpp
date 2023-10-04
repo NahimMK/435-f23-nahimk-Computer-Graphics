@@ -144,7 +144,6 @@ Tracer::Tracer(const std::string &fname) {
   char ch;
   Fill fill;
   bool coloredlights = false;
-  const int maxRecursions = 5;
 
   while (in) {
 	getline(in, line);
@@ -297,29 +296,65 @@ Tracer::~Tracer() {
   for (unsigned int i=0; i<surfaces.size(); i++) delete surfaces[i].first;
 }
 
-Eigen::Vector3d Tracer::shade(const HitRecord &hr) const {
-  return hr.f.color;
+Eigen::Vector3d Tracer::shade(const HitRecord &hr, const Ray &incidentRay) const {
+  Eigen::Vector3d localColor(0.0, 0.0, 0.0);
+  
+  for (const Light &light : lights) {
+    Eigen::Vector3d L = light.p - hr.p;
+    L.normalize();
+    double lightIntensity = 1.0/sqrt(lights.size());
+    
+    //casts a shadow ray to see if there's a shadow
+    Ray shadowRay(hr.p + shadowbias * hr.n, L);
+    bool inShadow = false;
+    //check for intersection with surfaces to see if point is in the shadow
+    for (const std::pair<Surface *, Fill> &s : surfaces) {
+      HitRecord shadowHit;
+      if (s.first->intersect(shadowRay, shadowbias, MAX, shadowHit)) {
+        inShadow = true;
+        break;
+      }
+    }
+    
+    if (!inShadow) {
+      //this is the diffuse and Blinn-Phong shading
+	  //calculating diffuse and specular components
+      double diffuse = std::max(0.0, hr.n.dot(L));
+      Eigen::Vector3d H = (L + incidentRay.d).normalized();
+      double specular = pow(std::max(0.0, hr.n.dot(H)), hr.f.shine);
+      
+      localColor += (hr.f.kd * hr.f.color + hr.f.ks * Eigen::Vector3d(1.0, 1.0, 1.0)) * (diffuse + specular) * lightIntensity;
+    }
+  }
+  
+  return localColor;
 }
 
 Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
+  if (r.depth > maxraydepth) {
+    return Eigen::Vector3d(0.0, 0.0, 0.0); //stops the recursion if 5 depth is reached
+  }
+  
   HitRecord hr;
   Eigen::Vector3d color(bcolor);
   
   bool hit = false;
-  for (unsigned int k=0; k<surfaces.size(); k++) {
-	const std::pair<Surface *, Fill> &s  = surfaces[k];
-	if (s.first->intersect(r, t0, t1, hr)) {
-	  t1 = hr.t;
-	  hr.f = s.second;
-	  hr.raydepth = r.depth;
-	  hr.v = r.e - hr.p;
-	  hr.v.normalize();
-	  hit = true;
-	}
+  //goes through all surfaces in the scene to find the closest intersection
+  for (unsigned int k = 0; k < surfaces.size(); k++) {
+    const std::pair<Surface *, Fill> &s = surfaces[k];
+    if (s.first->intersect(r, t0, t1, hr)) {
+      t1 = hr.t;
+      hr.f = s.second;
+      hr.raydepth = r.depth;
+      hr.v = r.e - hr.p;
+      hr.v.normalize();
+      hit = true;
+    }
   }
-
+  
   if (hit) {
-	color = shade(hr);
+	//if intersection is found, then call shade method
+    color = shade(hr, r); 
   }
   return color;
 }
