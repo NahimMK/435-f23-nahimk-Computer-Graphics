@@ -297,49 +297,64 @@ Tracer::~Tracer() {
 }
 
 Eigen::Vector3d Tracer::shade(const HitRecord &hr, const Ray &incidentRay) const {
+
   Eigen::Vector3d localColor(0.0, 0.0, 0.0);
-  
+
   for (const Light &light : lights) {
     Eigen::Vector3d L = light.p - hr.p;
     L.normalize();
-    double lightIntensity = 1.0/sqrt(lights.size());
-    
-    //casts a shadow ray to see if there's a shadow
-    Ray shadowRay(hr.p + shadowbias * hr.n, L);
+    double lightIntensity = 1.0 / sqrt(lights.size());
+
+    Eigen::Vector3d shadowRayOrigin = hr.p + shadowbias * hr.n;
+    Eigen::Vector3d shadowRayDirection = light.p - shadowRayOrigin;
+    shadowRayDirection.normalize();
+    Ray shadowRay(shadowRayOrigin, shadowRayDirection);
     bool inShadow = false;
-    //check for intersection with surfaces to see if point is in the shadow
-    for (const std::pair<Surface *, Fill> &s : surfaces) {
-      HitRecord shadowHit;
-      if (s.first->intersect(shadowRay, shadowbias, MAX, shadowHit)) {
-        inShadow = true;
-        break;
-      }
+
+for (const std::pair<Surface *, Fill> &s : surfaces) {
+    HitRecord shadowHit;
+    if (s.first->intersect(shadowRay, shadowbias, MAX, shadowHit) && shadowHit.t > shadowbias) {
+
+        Eigen::Vector3d lightDirection = (light.p - shadowHit.p).normalized();
+        double dotProduct = lightDirection.dot(shadowRay.d);
+        if (dotProduct > 0.0) {
+            inShadow = false;
+            break;
+        } else {
+            continue;
+        }
     }
-    
+}
+
     if (!inShadow) {
-      //this is the diffuse and Blinn-Phong shading
-	  //calculating diffuse and specular components
-      double diffuse = std::max(0.0, hr.n.dot(L));
+      double diffuse = std::max(0.0, hr.n.normalized().dot(L));
+
       Eigen::Vector3d H = (L + incidentRay.d).normalized();
-      double specular = pow(std::max(0.0, hr.n.dot(H)), hr.f.shine);
-      
-      localColor += (hr.f.kd * hr.f.color + hr.f.ks * Eigen::Vector3d(1.0, 1.0, 1.0)) * (diffuse + specular) * lightIntensity;
+
+      double specular = pow(std::max(0.0, hr.n.normalized().dot(H)), hr.f.shine);
+
+      Eigen::Vector3d diffuseColor = hr.f.kd * hr.f.color;
+
+      localColor[0] += (diffuseColor[0] * diffuse + hr.f.ks * specular) * lightIntensity;
+      localColor[1] += (diffuseColor[1] * diffuse + hr.f.ks * specular) * lightIntensity;
+      localColor[2] += (diffuseColor[2] * diffuse + hr.f.ks * specular) * lightIntensity;
     }
   }
+
   
   return localColor;
 }
 
 Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
   if (r.depth > maxraydepth) {
-    return Eigen::Vector3d(0.0, 0.0, 0.0); //stops the recursion if 5 depth is reached
+    return Eigen::Vector3d(0.0, 0.0, 0.0);
   }
-  
+
   HitRecord hr;
   Eigen::Vector3d color(bcolor);
-  
+
   bool hit = false;
-  //goes through all surfaces in the scene to find the closest intersection
+
   for (unsigned int k = 0; k < surfaces.size(); k++) {
     const std::pair<Surface *, Fill> &s = surfaces[k];
     if (s.first->intersect(r, t0, t1, hr)) {
@@ -351,11 +366,19 @@ Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
       hit = true;
     }
   }
-  
+
   if (hit) {
-	//if intersection is found, then call shade method
-    color = shade(hr, r); 
+    color = shade(hr, r);
+
+    if (hr.f.ks > 0 && r.depth < maxraydepth) {
+      Eigen::Vector3d reflectionDirection = r.d - 2.0 * dot(r.d, hr.n) * hr.n;
+      Eigen::Vector3d reflectionOrigin = hr.p + shadowbias * hr.n;
+      Ray reflectionRay(reflectionOrigin, reflectionDirection, r.depth + 1);
+      Eigen::Vector3d reflectionColor = castRay(reflectionRay, t0, t1);
+      color += hr.f.ks * reflectionColor;
+    }
   }
+
   return color;
 }
 
@@ -394,13 +417,13 @@ void Tracer::createImage() {
       Eigen::Vector3d dir = x*u + y*v - d*w;
       (*pixel) = Eigen::Vector3d(0.0,0.0,0.0);
       for (int k=0; k<samples; k++) {
-	for (int l=0; l<samples; l++) {
-	  Eigen::Vector3d origin = eye;
-	  Eigen::Vector3d imagept = eye + dir;
-	  Ray r(origin, imagept-origin);
-	  r.d.normalize();
-	  (*pixel) += castRay(r, hither, MAX) / (samples*samples);
-	}
+        for (int l=0; l<samples; l++) {
+          Eigen::Vector3d origin = eye;
+          Eigen::Vector3d imagept = eye + dir;
+          Ray r(origin, imagept-origin);
+          r.d.normalize();
+          (*pixel) += castRay(r, hither, MAX) / (samples*samples);
+        }
       }
     }
   }
