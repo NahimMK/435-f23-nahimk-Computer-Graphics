@@ -1,3 +1,10 @@
+//CMSC 435 Computer Graphics
+//Rendering Teapot Using Raytracing and Adding Mirror Reflection,
+//Diffuse, and Blinn-Phong specular lighting with shadows
+//Nahim Kamruzzaman
+//10.4.23
+//Header file for hide.cpp
+
 #ifndef TRACE_H
 #define TRACE_H
 

@@ -1,3 +1,16 @@
+//CMSC 435 Computer Graphics
+//Rendering Teapot Using Raytracing and Adding Mirror Reflection,
+//Diffuse, and Blinn-Phong specular lighting with shadows
+//Nahim Kamruzzaman
+//10.4.23
+//For some reason the bottom of my teapots reflection is see through.
+//I tried messing around with the shadow bias but I think what it really comes
+//down to is me missing some shadow rays and intersections.
+//This is a program that parses an NFF file and renders shapes
+//using raytracing and the barycentric intersection method (Bargtiel's base code).
+//It also adds diffuse and Blinn-Phong specular lighting with shadows and
+//mirror reflections (my additions in the shade and castRay funcitons).
+
 #include "trace.h"
 #include <string>
 #include <sstream>
@@ -296,56 +309,63 @@ Tracer::~Tracer() {
   for (unsigned int i=0; i<surfaces.size(); i++) delete surfaces[i].first;
 }
 
+//shade function to claculate shading for a hit point
 Eigen::Vector3d Tracer::shade(const HitRecord &hr, const Ray &incidentRay) const {
-
   Eigen::Vector3d localColor(0.0, 0.0, 0.0);
-
+  //loops through all the lights in the scene
   for (const Light &light : lights) {
+    //calculates direction from hit point to light source
     Eigen::Vector3d L = light.p - hr.p;
     L.normalize();
+    //calculates light intesnity of light source
     double lightIntensity = 1.0 / sqrt(lights.size());
 
-    Eigen::Vector3d shadowRayOrigin = hr.p + shadowbias * hr.n;
-    Eigen::Vector3d shadowRayDirection = light.p - shadowRayOrigin;
+    //calculates the shadow ray from the hit point to the light source
+    Eigen::Vector3d shadowRayOrigin = hr.p + shadowbias * hr.n; //updates shadow ray origin (shadowbias)
+    Eigen::Vector3d shadowRayDirection = light.p - shadowRayOrigin; //updates shadow ray direction
     shadowRayDirection.normalize();
+    //creates shadow ray
     Ray shadowRay(shadowRayOrigin, shadowRayDirection);
-    bool inShadow = false;
+    bool inShadow = false; //variable to hold if point is in shadow
 
-for (const std::pair<Surface *, Fill> &s : surfaces) {
-    HitRecord shadowHit;
-    if (s.first->intersect(shadowRay, shadowbias, MAX, shadowHit) && shadowHit.t > shadowbias) {
-
-        Eigen::Vector3d lightDirection = (light.p - shadowHit.p).normalized();
-        double dotProduct = lightDirection.dot(shadowRay.d);
-        if (dotProduct > 0.0) {
-            inShadow = false;
-            break;
-        } else {
-            continue;
-        }
+    //loops through surfaces
+    for (const std::pair<Surface *, Fill> &s : surfaces) {
+      HitRecord shadowHit;
+      //checks if shadow ray intersects with surface, and if so then hit point is in shadow
+      if (s.first->intersect(shadowRay, shadowbias, MAX, shadowHit) && shadowHit.p != hr.p) { // Exclude the surface itself
+        inShadow = true;
+        break;
+      }
     }
-}
 
+    //if the hit point is not in the shadow then we need to calulate the shading using
+    //the Blinn-Phong method
     if (!inShadow) {
+      //calculates the diffuse component
       double diffuse = std::max(0.0, hr.n.normalized().dot(L));
 
+      //calculates the halfway vector (necessary for Blinn-Phong)
       Eigen::Vector3d H = (L + incidentRay.d).normalized();
 
+      //calculates the specular component using Blinn-Phong
       double specular = pow(std::max(0.0, hr.n.normalized().dot(H)), hr.f.shine);
 
+      // This applies the material color to the diffuse and specular components
       Eigen::Vector3d diffuseColor = hr.f.kd * hr.f.color;
 
+      // Compute the final shading for each component (r, g, b) of the local color
       localColor[0] += (diffuseColor[0] * diffuse + hr.f.ks * specular) * lightIntensity;
       localColor[1] += (diffuseColor[1] * diffuse + hr.f.ks * specular) * lightIntensity;
       localColor[2] += (diffuseColor[2] * diffuse + hr.f.ks * specular) * lightIntensity;
     }
   }
 
-  
   return localColor;
 }
 
+//function to cast a ray into the scene and calculate the color of the point
 Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
+  //to limits the number of recursions to 5
   if (r.depth > maxraydepth) {
     return Eigen::Vector3d(0.0, 0.0, 0.0);
   }
@@ -354,7 +374,7 @@ Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
   Eigen::Vector3d color(bcolor);
 
   bool hit = false;
-
+  //loop through and find the closest intersection of the ray with a surface
   for (unsigned int k = 0; k < surfaces.size(); k++) {
     const std::pair<Surface *, Fill> &s = surfaces[k];
     if (s.first->intersect(r, t0, t1, hr)) {
@@ -368,12 +388,16 @@ Eigen::Vector3d Tracer::castRay(const Ray &r, double t0, double t1) const {
   }
 
   if (hit) {
+    //calculate the shading for the hit point
     color = shade(hr, r);
-
+    //if the coefficient for the reflection rays is greater than 0
     if (hr.f.ks > 0 && r.depth < maxraydepth) {
+      //calculate the refelection ray direction and origin
       Eigen::Vector3d reflectionDirection = r.d - 2.0 * dot(r.d, hr.n) * hr.n;
       Eigen::Vector3d reflectionOrigin = hr.p + shadowbias * hr.n;
+      //create reflection ray
       Ray reflectionRay(reflectionOrigin, reflectionDirection, r.depth + 1);
+      //recursively cast the reflection ray and add each color to the reflection color
       Eigen::Vector3d reflectionColor = castRay(reflectionRay, t0, t1);
       color += hr.f.ks * reflectionColor;
     }
