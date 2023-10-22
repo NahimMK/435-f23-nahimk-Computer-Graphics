@@ -32,5 +32,8 @@ Then run
 to generate the output.ppm file. You can use a ppmviewer to view what the
 output.ppm looks like.
 
+Please look at my functions as I think most make sense but I just couldn't get it 
+to change the pixels. Parial credit?
+
 
 THIS PROJECT WAS SUBMITTED AT 12:46 AM 10-22-2023
