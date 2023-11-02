@@ -1,36 +1,36 @@
   +--------------------------------------------------------+
-  |___   25          README comment or file                |
-  |      ___    1      Submitted a readme file             |
-  |      ___    5      Description of assignment           |
-  |      ___    2      Clean submission(no .o .d files)    |  
-  |      ___    2      Statement of help                   |
-  |      ___   10      Code Comments                       |
-  |      ___    5      Regular commits and log entries     |
+  |_25   25          README comment or file                |
+  |      _1_    1      Submitted a readme file             |
+  |      _5_    5      Description of assignment           |
+  |      _2_    2      Clean submission(no .o .d files)    |  
+  |      _2_    2      Statement of help                   |
+  |      _10   10      Code Comments                       |
+  |      _5_    5      Regular commits and log entries     |
   +--------------------------------------------------------+
-  |___   20          Implementation                        |
-  |      ___   15      Compiles and executes w/o errors    |
-  |      ___    5      Written in C/C++;                   |
+  |_20   20          Implementation                        |
+  |      _15   15      Compiles and executes w/o errors    |
+  |      _5_    5      Written in C/C++;                   |
   +--------------------------------------------------------+
-  |___   20          Input/output                          |
-  |      ___    5      Correctly parses nff file           |
-  |      ___    5      Outputs valid ppm image             |
-  |      ___   10      Outputs correct image               |
+  |_10   20          Input/output                          |
+  |      _5_    5      Correctly parses nff file           |
+  |      _5_    5      Outputs valid ppm image             |
+  |      _0_   10      Outputs correct image               | -10 only background
   +--------------------------------------------------------+
-  |___   25         Vertex Processing                      |
-  |      ___   10     Local illumination                   |
-  |      ___   15     Transformation                       |
+  |_0_   25         Vertex Processing                      | -25 not implemented
+  |      _0_   10     Local illumination                   |
+  |      _0_   15     Transformation                       | 
   +--------------------------------------------------------+
-  |___   25         Rasterization                          |
-  |      ___   15     Pixel overlap calculation            |
-  |      ___   10     Attribute interpolation              |
+  |_25   25         Rasterization                          |
+  |      _15   15     Pixel overlap calculation            |
+  |      _10   10     Attribute interpolation              |
   +--------------------------------------------------------+
-  |___   10         Blending                               |
-  |      ___   10     Correct fragment                     |
+  |_0_   10         Blending                               | -10 not implemented
+  |      _0_   10     Correct fragment                     |
   +--------------------------------------------------------+
-  |___     25        (Ex) Clipping                         |
+  |_10     25        (Ex) Clipping                         | clipping planes in world space will be different, not actually calculating intersection
   |___     15        (Ex) Fragment shading                 |
   |___     25        (Ex) Shadow maps                      |
   |___     15        (Ex) Transparency                     |
   +--------------------------------------------------------+
-  |___               Total (of 125)                        |
+  |78.3              Total (of 125)                        | Late Multiplier (0.87)
   +--------------------------------------------------------+
