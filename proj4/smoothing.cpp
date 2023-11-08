@@ -8,7 +8,7 @@ void laplacianSmoothing(std::vector<Eigen::Vector3d> &pts, const std::vector<Tri
         std::vector<Eigen::Vector3d> newPts(pts.size(), Eigen::Vector3d::Zero());
         std::vector<int> count(pts.size(), 0);
 
-        // Calculate Laplacian and count incident edges for each vertex
+        //calculate Laplacian and count incident edges for each vertex
         for (const Tri &tri : triangles) {
             for (int i = 0; i < 3; i++) {
                 int v0 = tri[i];
@@ -19,11 +19,11 @@ void laplacianSmoothing(std::vector<Eigen::Vector3d> &pts, const std::vector<Tri
             }
         }
 
-        // Update vertex positions
+        //update vertex positions
         for (int i = 0; i < pts.size(); i++) {
             if (count[i] > 0) {
-                newPts[i] /= count[i];  // Calculate the average Laplacian
-                pts[i] += stepsize * (newPts[i] - pts[i]);  // Update the vertex position
+                newPts[i] /= count[i];  //calculate the average Laplacian
+                pts[i] += stepsize * (newPts[i] - pts[i]);  //update the vertex position
             }
         }
     }
@@ -31,6 +31,7 @@ void laplacianSmoothing(std::vector<Eigen::Vector3d> &pts, const std::vector<Tri
 
 int main(int argc, char* argv[]) {
     if (argc != 5) {
+        //message testing inputs
         std::cerr << "Usage: smoothing input.obj output.obj stepsize niterations" << std::endl;
         return 1;
     }
@@ -51,7 +52,7 @@ int main(int argc, char* argv[]) {
     laplacianSmoothing(pts, triangles, stepsize, niterations);
 
     writeObjFile(outputFileName, pts, triangles);
-
+    //message of success
     std::cout << "Smoothing completed. Result saved to " << outputFileName << std::endl;
 
     return 0;
