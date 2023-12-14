@@ -1,4 +1,5 @@
 #define cimg_display 0
+#define cimg_use_jpg
 #include "CImg.h"
 #include <Eigen/Dense>
 using namespace cimg_library;
